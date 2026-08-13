@@ -217,6 +217,12 @@ fsp_err_t R_XSPI_QSPI_Open (spi_flash_ctrl_t * p_ctrl, spi_flash_cfg_t const * c
         p_instance_ctrl->p_reg->CSSCTL_b.CS1SIZE = p_cfg_extend->memory_size;
     }
 
+#ifdef USE_HRAM
+    p_instance_ctrl->p_reg->WRAPCFG = 0x0C000000;
+#else
+    p_instance_ctrl->p_reg->WRAPCFG = 0x0000;
+#endif
+
     p_instance_ctrl->p_reg->LIOCFGCS[p_cfg_extend->chip_select] =
         ((p_cfg->spi_protocol & XSPI_QSPI_PRV_LIOCFGCS_PRTMD_VALUE_MASK) << XSPI_QSPI_PRV_LIOCFGCS_PRTMD_OFFSET) |
         ((p_cfg_extend->p_timing_settings->command_to_command_interval &

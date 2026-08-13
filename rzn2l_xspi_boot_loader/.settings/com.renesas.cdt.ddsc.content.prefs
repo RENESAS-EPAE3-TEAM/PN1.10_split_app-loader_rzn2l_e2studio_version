@@ -1,2 +1,2 @@
-com.renesas.cdt.ddsc.content.defaultlinkerscript=script/fsp_xspi0_boot_loader.ld
+com.renesas.cdt.ddsc.content.defaultlinkerscript=script/fsp_xspi0_boot.ld
 eclipse.preferences.version=1
