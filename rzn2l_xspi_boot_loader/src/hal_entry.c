@@ -111,7 +111,7 @@ void R_BSP_WarmStart(bsp_warm_start_event_t event)
         if (NULL != g_bsp_pin_cfg.p_extend)
         {
             /* Configure pins. */
-            R_IOPORT_Open (&IOPORT_CFG_CTRL, &IOPORT_CFG_NAME);
+            R_IOPORT_Open (&g_ioport_ctrl, &g_bsp_pin_cfg);
         }
 
         /* Keep the original project's xSPI Flash interface active for the
