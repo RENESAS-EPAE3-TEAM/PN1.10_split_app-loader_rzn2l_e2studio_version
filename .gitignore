@@ -5,6 +5,7 @@
 
 # Generated build products and dependency files
 **/build/
+**/Debug/
 **/Debug_*/
 **/Release_*/
 **/*.d
