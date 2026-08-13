@@ -126,6 +126,15 @@ SECTIONS
         . = . + (_data_noncache_end - _data_noncache_start);
         flash_contents_end = .;
     } > xSPI0_CS0_SPACE
+
+    /* The application binary is copied by the Loader using its manifest. */
+    .IMAGE_APP_FLASH_section 0x60100000 : AT (0x60100000)
+    {
+        IMAGE_APP_FLASH_section_start = .;
+        KEEP(*(.IMAGE_APP_FLASH_section))
+        IMAGE_APP_FLASH_section_end = .;
+    } > xSPI0_CS0_SPACE
+
     .loader_text LOADER_TEXT_ADDRESS : AT (_mloader_text)
     {
         _loader_text_start = .;
