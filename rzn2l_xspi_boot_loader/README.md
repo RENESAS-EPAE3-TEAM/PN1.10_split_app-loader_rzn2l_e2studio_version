@@ -21,3 +21,8 @@ ROM Loader parameters as the original project (`0x6000004C`, `0x6000`, and
 The current manifest contains four generic section entries: vector table, program text, initialized data, and non-cache initialized data. The Loader contains no App-number-specific address, size, or selection logic.
 
 `application.bin` is generated output and is intentionally excluded from Git.
+
+## Required FSP generation
+
+After importing the Loader into e2 studio, run **Generate Project Content** before building. This regenerates zn_gen for the retained IOPORT, xSPI-QSPI, HyperRAM, and memory-configuration modules; stale App/FreeRTOS generated files have intentionally been removed.
+
