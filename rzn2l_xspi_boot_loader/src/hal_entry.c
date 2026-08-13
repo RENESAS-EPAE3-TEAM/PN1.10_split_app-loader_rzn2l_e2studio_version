@@ -89,6 +89,40 @@ void hal_entry(void)
  *
  * @param[in]  event    Where at in the start up process the code is currently at
  **********************************************************************************************************************/
+#define QSPI_CMD_WRITE_ENABLE 0
+#define QSPI_CMD_WRITE_STATUS 1
+#define QSPI_CMD_READ_STATUS  2
+spi_flash_direct_transfer_t qspi_command[3] =
+{
+    {
+    .command        = 0x06, // WEN(Write Enable)
+    .address        = 0U,
+    .data           = 0U,
+    .command_length = 1U,
+    .address_length = 0U,
+    .data_length    = 0U,
+    .dummy_cycles   = 0U
+    },
+    {
+    .command        = 0x01, // WRSR(Write Status Register)
+    .address        = 0U,
+    .data           = 0x40,
+    .command_length = 1U,
+    .address_length = 0U,
+    .data_length    = 1U,
+    .dummy_cycles   = 0U
+    },
+    {
+    .command        = 0x05, // RDSR(Read Status Register)
+    .address        = 0U,
+    .data           = 0U,
+    .command_length = 1U,
+    .address_length = 0U,
+    .data_length    = 1U,
+    .dummy_cycles   = 0U
+    },
+};
+
 void R_BSP_WarmStart(bsp_warm_start_event_t event)
 {
     if (BSP_WARM_START_RESET == event)
@@ -117,8 +151,17 @@ void R_BSP_WarmStart(bsp_warm_start_event_t event)
         /* Keep the original project's xSPI Flash interface active for the
          * embedded application image, then initialize the selected external
          * SDRAM or HyperRAM implementation. */
-        (void) R_XSPI_QSPI_Open(&g_qspi_ldr_ctrl, &g_qspi_ldr_cfg);
-        (void) R_XSPI_QSPI_SpiProtocolSet(&g_qspi_ldr_ctrl, SPI_FLASH_PROTOCOL_1S_4S_4S);
+        R_XSPI_QSPI_Open(&g_qspi_ldr_ctrl, &g_qspi_ldr_cfg);
+        R_XSPI_QSPI_SpiProtocolSet(&g_qspi_ldr_ctrl, SPI_FLASH_PROTOCOL_1S_1S_1S);
+        R_XSPI_QSPI_DirectTransfer(&g_qspi_ldr_ctrl, &qspi_command[QSPI_CMD_WRITE_ENABLE], SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
+        R_XSPI_QSPI_DirectTransfer(&g_qspi_ldr_ctrl, &qspi_command[QSPI_CMD_WRITE_STATUS], SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
+        do{
+            R_XSPI_QSPI_DirectTransfer(&g_qspi_ldr_ctrl, &qspi_command[QSPI_CMD_READ_STATUS], SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
+        }while((qspi_command[QSPI_CMD_READ_STATUS].data & 0x01) == 0x0);
+        do{
+            R_XSPI_QSPI_DirectTransfer(&g_qspi_ldr_ctrl, &qspi_command[QSPI_CMD_READ_STATUS], SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
+        }while((qspi_command[QSPI_CMD_READ_STATUS].data & 0x41) != 0x40);
+			R_XSPI_QSPI_SpiProtocolSet(&g_qspi_ldr_ctrl, SPI_FLASH_PROTOCOL_1S_4S_4S);
         loader_external_memory_init();
     }
 }

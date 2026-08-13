@@ -4,7 +4,7 @@
 
 INCLUDE memory_regions.ld
 
-INCLUDE redefinition_memory_regions_gcc.h
+INCLUDE ../script/redefinition_memory_regions_gcc.h
 
 /*============================================================================*/
 /* A D D R E S S   S Y M B O L                                                */
