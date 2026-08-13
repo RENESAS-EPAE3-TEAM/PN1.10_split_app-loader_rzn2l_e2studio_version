@@ -22,8 +22,9 @@
  * Includes   <System Includes> , "Project Includes"
  **********************************************************************************************************************/
 #include "bsp_api.h"
+#include "split_loader_app.h"
 
-#if !(BSP_CFG_RAM_EXECUTION)
+#if !(BSP_CFG_RAM_EXECUTION) && !defined(SPLIT_LOADER_APP)
 
 /***********************************************************************************************************************
  * Macro definitions
