@@ -4,6 +4,14 @@ This project is intentionally independent of App1-App5. It embeds the current
 application image from `../rzn2l_xspi_boot/build/loader_input/application.bin`
 and reads the image manifest at the start of that binary.
 
+## FSP baseline
+
+`configuration.xml`, `rzn_cfg`, `rzn_gen`, `rzn`, and the e² studio FSP
+metadata are migrated from `rzn2l_xspi_boot`. The Loader therefore uses the
+same FSP 2.0.0 / GCC 12.2.1 baseline, xSPI0 x1 Boot board settings, and Boot
+ROM Loader parameters as the original project (`0x6000004C`, `0x6000`, and
+`0x00102000`). Do not regenerate this project from a newer FSP package.
+
 ## Build order
 
 1. Build any `rzn2l_xspi_boot` configuration (App1, App3, App44, App5, with or without `USE_HRAM`).

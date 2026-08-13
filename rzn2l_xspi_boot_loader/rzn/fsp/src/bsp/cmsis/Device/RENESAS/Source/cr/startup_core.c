@@ -1,13 +1,28 @@
-/*
-* Copyright (c) 2020 - 2025 Renesas Electronics Corporation and/or its affiliates
-*
-* SPDX-License-Identifier: BSD-3-Clause
-*/
+/***********************************************************************************************************************
+ * Copyright [2020-2024] Renesas Electronics Corporation and/or its affiliates.  All Rights Reserved.
+ *
+ * This software and documentation are supplied by Renesas Electronics Corporation and/or its affiliates and may only
+ * be used with products of Renesas Electronics Corp. and its affiliates ("Renesas").  No other uses are authorized.
+ * Renesas products are sold pursuant to Renesas terms and conditions of sale.  Purchasers are solely responsible for
+ * the selection and use of Renesas products and Renesas assumes no liability.  No license, express or implied, to any
+ * intellectual property right is granted by Renesas.  This software is protected under all applicable laws, including
+ * copyright laws. Renesas reserves the right to change or discontinue this software and/or this documentation.
+ * THE SOFTWARE AND DOCUMENTATION IS DELIVERED TO YOU "AS IS," AND RENESAS MAKES NO REPRESENTATIONS OR WARRANTIES, AND
+ * TO THE FULLEST EXTENT PERMISSIBLE UNDER APPLICABLE LAW, DISCLAIMS ALL WARRANTIES, WHETHER EXPLICITLY OR IMPLICITLY,
+ * INCLUDING WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT, WITH RESPECT TO THE
+ * SOFTWARE OR DOCUMENTATION.  RENESAS SHALL HAVE NO LIABILITY ARISING OUT OF ANY SECURITY VULNERABILITY OR BREACH.
+ * TO THE MAXIMUM EXTENT PERMITTED BY LAW, IN NO EVENT WILL RENESAS BE LIABLE TO YOU IN CONNECTION WITH THE SOFTWARE OR
+ * DOCUMENTATION (OR ANY PERSON OR ENTITY CLAIMING RIGHTS DERIVED FROM YOU) FOR ANY LOSS, DAMAGES, OR CLAIMS WHATSOEVER,
+ * INCLUDING, WITHOUT LIMITATION, ANY DIRECT, CONSEQUENTIAL, SPECIAL, INDIRECT, PUNITIVE, OR INCIDENTAL DAMAGES; ANY
+ * LOST PROFITS, OTHER ECONOMIC DAMAGE, PROPERTY DAMAGE, OR PERSONAL INJURY; AND EVEN IF RENESAS HAS BEEN ADVISED OF THE
+ * POSSIBILITY OF SUCH LOSS, DAMAGES, CLAIMS OR COSTS.
+ **********************************************************************************************************************/
 
 /***********************************************************************************************************************
  * Includes   <System Includes> , "Project Includes"
  **********************************************************************************************************************/
 #include "bsp_api.h"
+#include "split_loader_app.h"
 
 /***********************************************************************************************************************
  * Macro definitions
@@ -35,18 +50,9 @@
 
 #endif
 
-#if (0 == BSP_CFG_CORE_CR52) || (1 == BSP_FEATURE_BSP_HAS_CR52_CPU1_TCM)
- #define BSP_IMP_BTCMREGIONR_MASK_L         (0x1FFC) /* Masked out BASEADDRESS and ENABLEELx bits(L) */
- #define BSP_IMP_BTCMREGIONR_ENABLEEL_L     (0x0003) /* Set base address and enable EL2, EL1, EL0 access(L) */
- #define BSP_IMP_BTCMREGIONR_ENABLEEL_H     (0x0010) /* Set base address and enable EL2, EL1, EL0 access(H) */
-
-#endif
-
-#if (0 == BSP_CFG_CORE_CR52)
-
-/* Cortex-A55 Core0 access permission control. */
- #define BSP_CA550_CTRL_ENABLE    (0x00000100)
-#endif
+#define BSP_IMP_BTCMREGIONR_MASK_L          (0x1FFC) /* Masked out BASEADDRESS and ENABLEELx bits(L) */
+#define BSP_IMP_BTCMREGIONR_ENABLEEL_L      (0x0003) /* Set base address and enable EL2, EL1, EL0 access(L) */
+#define BSP_IMP_BTCMREGIONR_ENABLEEL_H      (0x0010) /* Set base address and enable EL2, EL1, EL0 access(H) */
 
 /***********************************************************************************************************************
  * Typedef definitions
@@ -81,10 +87,7 @@ extern void bsp_fpu_advancedsimd_init(void);
 
 #endif
 
-#if (0 == BSP_CFG_CORE_CR52) || (1 == BSP_FEATURE_BSP_HAS_CR52_CPU1_TCM)
 extern void bsp_slavetcm_enable(void);
-
-#endif
 
 /***********************************************************************************************************************
  * Private global variables and functions
@@ -95,8 +98,7 @@ BSP_TARGET_ARM BSP_ATTRIBUTE_STACKLESS void system_init(void) BSP_PLACE_IN_SECTI
 BSP_TARGET_ARM BSP_ATTRIBUTE_STACKLESS void stack_init(void);
 BSP_TARGET_ARM void                         fpu_slavetcm_init(void);
 
-BSP_TARGET_ARM BSP_ATTRIBUTE_STACKLESS void __Vectors(void) BSP_PLACE_IN_SECTION(".intvec");
-
+BSP_TARGET_ARM BSP_ATTRIBUTE_STACKLESS void        __Vectors(void) BSP_PLACE_IN_SECTION(".intvec");
 __WEAK BSP_TARGET_ARM BSP_ATTRIBUTE_STACKLESS void IRQ_Handler(void);
 __WEAK BSP_TARGET_ARM BSP_ATTRIBUTE_STACKLESS void Reset_Handler(void) BSP_PLACE_IN_SECTION(".reset_handler");
 
@@ -121,6 +123,15 @@ BSP_PLACE_IN_SECTION(BSP_SECTION_SVC_STACK);
 
 BSP_DONT_REMOVE static uint8_t g_heap[BSP_CFG_HEAP_BYTES] BSP_ALIGN_VARIABLE(BSP_STACK_ALIGNMENT) \
     BSP_PLACE_IN_SECTION(BSP_SECTION_HEAP);
+#endif
+
+#if defined(__GNUC__)
+BSP_DONT_REMOVE static const void * g_bsp_dummy BSP_PLACE_IN_SECTION(".dummy");
+
+ #if BSP_CFG_RAM_EXECUTION
+BSP_DONT_REMOVE static const void * g_bsp_loader_dummy BSP_PLACE_IN_SECTION(".loader_dummy");
+
+ #endif
 #endif
 
 BSP_TARGET_ARM BSP_ATTRIBUTE_STACKLESS void __Vectors (void)
@@ -159,16 +170,26 @@ void Default_Handler (void)
  **********************************************************************************************************************/
 BSP_TARGET_ARM BSP_ATTRIBUTE_STACKLESS void system_init (void)
 {
+#if defined(SPLIT_LOADER_APP)
+    /* Loader already entered EL1 and configured the early platform state. */
+    __asm volatile (
+        "    LDR   r0, =__Vectors                 \n"
+        "    MCR   p15, #0, r0, c12, c0, #0       \n"
+        "    DSB                                  \n"
+        "    ISB                                  \n"
+        "    B     stack_init                     \n"
+        ::: "memory");
+#else
 #if 1 // Software loops are only needed when debugging.
-     __asm volatile (
-         "   mov   r0, #0                         \n"
-         "   movw  r1, #0x68bf                    \n"
-         "   movt  r1, #0x478                     \n"
-         "software_loop:                          \n"
-         "   adds  r0, #1                         \n"
-         "   cmp   r0, r1                         \n"
-         "   bne   software_loop                  \n"
-         ::: "memory");
+    __asm volatile (
+        "    mov   r0, #0                                   \n"
+        "    movw  r1, #0xf07f                              \n"
+        "    movt  r1, #0x2fa                               \n"
+        "software_loop:                                     \n"
+        "    adds  r0, #1                                   \n"
+        "    cmp   r0, r1                                   \n"
+        "    bne   software_loop                            \n"
+        ::: "memory");
 #endif
     __asm volatile (
         "set_hactlr:                              \n"
@@ -190,7 +211,6 @@ BSP_TARGET_ARM BSP_ATTRIBUTE_STACKLESS void system_init (void)
         "    MCR   p15, #0, r0, c12, c0, #0       \n" /* Write r0 to VBAR */
         ::: "memory");
 
-#if (0 == BSP_CFG_CORE_CR52) || (1 == BSP_FEATURE_BSP_HAS_CR52_CPU1_LLPP)
     __asm volatile (
         "LLPP_access_enable:                      \n"
 
@@ -202,7 +222,6 @@ BSP_TARGET_ARM BSP_ATTRIBUTE_STACKLESS void system_init (void)
         "    MCR   p15, #0, r1, c15, c0,#0        \n" /* PERIPHREGIONR */
         "    ISB                                  \n" /* Ensuring Context-changing */
         ::: "memory");
-#endif
 
     __asm volatile (
         "cpsr_save:                               \n"
@@ -218,6 +237,7 @@ BSP_TARGET_ARM BSP_ATTRIBUTE_STACKLESS void system_init (void)
         "    MSR   ELR_hyp, r1                    \n"
         "    ERET                                 \n" /* Branch to stack_init and enter EL1 */
         ::: "memory");
+    #endif
 }
 
 /** @} (end addtogroup BSP_MCU) */
@@ -289,19 +309,8 @@ BSP_TARGET_ARM void fpu_slavetcm_init (void)
     bsp_fpu_advancedsimd_init();
 #endif
 
-#if (0 == BSP_CFG_CORE_CR52) || (1 == BSP_FEATURE_BSP_HAS_CR52_CPU1_TCM)
-
     /* Enable SLAVEPCTLR TCM access lvl slaves */
     bsp_slavetcm_enable();
-#endif
-
-#if defined(BSP_MCU_GROUP_RZN2H)
- #if (0 == BSP_CFG_CORE_CR52)
-
-    /* Permit access to the Master-MPU related registers of Cortex-A55 Core0. */
-    R_MPU_AC->CPU_CTRL |= BSP_CA550_CTRL_ENABLE;
- #endif
-#endif
 
     BSP_SYSTEMINIT_B_INSTRUCTION
 }
@@ -355,8 +364,6 @@ __WEAK BSP_TARGET_ARM BSP_ATTRIBUTE_STACKLESS void IRQ_Handler (void)
 
 __WEAK BSP_TARGET_ARM BSP_ATTRIBUTE_STACKLESS void Reset_Handler (void)
 {
-#if (0 == BSP_CFG_CORE_CR52) || (1 == BSP_FEATURE_BSP_HAS_CR52_CPU1_TCM)
-
     /* Enable access to BTCM */
     __asm volatile (
         "set_IMP_BTCMREGIONR:                            \n"
@@ -374,7 +381,6 @@ __WEAK BSP_TARGET_ARM BSP_ATTRIBUTE_STACKLESS void Reset_Handler (void)
         ::[bsp_imp_btcmregionr_mask_l] "i" (BSP_IMP_BTCMREGIONR_MASK_L),
         [bsp_imp_btcmregionr_enableel_l] "i" (BSP_IMP_BTCMREGIONR_ENABLEEL_L),
         [bsp_imp_btcmregionr_enableel_h] "i" (BSP_IMP_BTCMREGIONR_ENABLEEL_H) : "memory");
-#endif
 
     /* Branch to system_init */
     __asm volatile ("B system_init");
