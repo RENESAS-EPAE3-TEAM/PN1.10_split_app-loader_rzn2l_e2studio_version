@@ -1,0 +1,27 @@
+# e² studio / Eclipse transient workspace state
+.metadata/
+**/.cache/
+*.log
+
+# Generated build products and dependency files
+**/build/
+**/Debug_*/
+**/Release_*/
+**/*.d
+**/*.o
+**/*.obj
+**/*.elf
+**/*.srec
+**/*.bin
+**/*.map
+**/*.lst
+
+# Local archives and backups
+*.7z
+*.zip
+*.bak
+
+# Editor and OS files
+.vscode/
+.DS_Store
+Thumbs.db
