@@ -8,6 +8,7 @@ FSP_CPP_FOOTER
 
 extern bsp_leds_t g_bsp_leds;
 extern void bsp_copy_multibyte(uintptr_t * src, uintptr_t * dst, uintptr_t bytesize);
+extern void bsp_bss_init_multibyte(uintptr_t * src, uintptr_t bytesize);
 extern void loader_external_memory_init(void);
 
 /*******************************************************************************************************************//**
@@ -53,6 +54,11 @@ void hal_entry(void)
     pin_level = R_BSP_PortRead(BSP_IO_REGION_SAFE, BSP_IO_PORT_18);
     R_BSP_PortWrite(BSP_IO_REGION_SAFE, BSP_IO_PORT_18, (pin_level | 1U << 2));
 
+    /* The App vector table has the same ATCM address as the Loader table.
+     * Do not allow an exception to use it while it is being replaced. The App
+     * startup code owns interrupt enablement after the handoff. */
+    //__asm volatile("cpsid if" ::: "memory");
+
     /* Copy application program with parameter in loader table. */
     /* The generic image manifest supplies the section copy table. */
     for ( table_num = 0; table_num < TABLE_ENTRY_NUM; table_num++)
@@ -60,6 +66,10 @@ void hal_entry(void)
         if (table[table_num].enable_flag == TABLE_ENABLE)
         {
             bsp_copy_multibyte(table[table_num].src, table[table_num].dst, table[table_num].size);
+        }
+        else if (table[table_num].enable_flag == TABLE_CLEAR)
+        {
+            bsp_bss_init_multibyte(table[table_num].dst, table[table_num].size);
         }
     }
 
@@ -75,6 +85,8 @@ void hal_entry(void)
 
     /* Delay */
     R_BSP_SoftwareDelay(1000, BSP_DELAY_UNITS_MILLISECONDS);
+
+    //__asm volatile("cpsie if" ::: "memory");
 
     /* Set application program destination to app_prg */
     app_prg = (void (*)(void)) loader_application_entry();

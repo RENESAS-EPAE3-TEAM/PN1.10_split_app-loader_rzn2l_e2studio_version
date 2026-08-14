@@ -173,12 +173,17 @@ BSP_TARGET_ARM BSP_ATTRIBUTE_STACKLESS void system_init (void)
 #if defined(SPLIT_LOADER_APP)
     /* Loader already entered EL1 and configured the early platform state. */
     __asm volatile (
-        "    LDR   r0, =__Vectors                 \n"
-        "    MCR   p15, #0, r0, c12, c0, #0       \n"
-        "    DSB                                  \n"
-        "    ISB                                  \n"
-        "    B     stack_init                     \n"
+        "    set_vbar:                 \n"
+        "    LDR r0, =__Vectors        \n"
+        "    MCR p15, #0, r0, c12, c0, #0     \n" /* Write r0 to VBAR */
         ::: "memory");
+
+    __asm volatile (
+        "jump_stack_init:               \n"
+        "    LDR r0, =stack_init        \n"
+        "    BLX r0                     \n"
+        ::: "memory");
+
 #else
 #if 1 // Software loops are only needed when debugging.
     __asm volatile (

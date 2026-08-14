@@ -50,7 +50,7 @@ CS5_SPACE_PRV_LENGTH = DEFINED(CS5_SPACE_LENGTH) ? CS5_SPACE_LENGTH : 0;
 
 /* The Boot ROM parameter block belongs to the separate Loader project. */
 APP_IMAGE_ADDRESS          = xSPI0_CS0_SPACE_PRV_START + 0x00100000;
-FLASH_CONTENTS_ADDRESS     = APP_IMAGE_ADDRESS + 0x00000050;
+FLASH_CONTENTS_ADDRESS     = APP_IMAGE_ADDRESS + 0x00000060;
 LOADER_TEXT_ADDRESS        = 0x00102000;
 INTVEC_ADDRESS             = 0x00000000;
 TEXT_ADDRESS               = 0x10000100;
@@ -116,20 +116,21 @@ MEMORY
 SECTIONS
 {
     /*
-     * Loader-readable manifest. The four entries are vector, text, data, and
-     * non-cache initialized data respectively. Its layout is defined in the
-     * Loader project's loader_table.h.
+    * Loader-readable manifest. Entries are vector, text, data, non-cache
+    * initialized data, and the BSS range to clear. Its layout is defined in
+    * the Loader project's loader_table.h.
      */
     .app_image_manifest APP_IMAGE_ADDRESS : AT (APP_IMAGE_ADDRESS)
     {
         LONG(0x41505049); /* APP_IMAGE_MAGIC */
-        LONG(1);          /* APP_IMAGE_FORMAT_VERSION */
-        LONG(4);          /* table entry count */
+        LONG(2);          /* APP_IMAGE_FORMAT_VERSION */
+        LONG(5);          /* table entry count */
         LONG(_fvector_start);
         LONG(_mfvector); LONG(_fvector_start); LONG(_fvector_end - _fvector_start); LONG(1);
         LONG(_mtext); LONG(_text_start); LONG(_text_end - _text_start); LONG(1);
         LONG(_mdata); LONG(_data_start); LONG(_data_end - _data_start); LONG(1);
         LONG(_mdata_noncache); LONG(_data_noncache_start); LONG(_data_noncache_end - _data_noncache_start); LONG(1);
+        LONG(0); LONG(__bss_start__); LONG(__bss_end__ - __bss_start__); LONG(2);
     } > xSPI0_CS0_SPACE
     .flash_contents FLASH_CONTENTS_ADDRESS : AT (FLASH_CONTENTS_ADDRESS)
     {

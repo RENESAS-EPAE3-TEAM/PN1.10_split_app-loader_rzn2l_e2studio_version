@@ -170,16 +170,6 @@ void Default_Handler (void)
  **********************************************************************************************************************/
 BSP_TARGET_ARM BSP_ATTRIBUTE_STACKLESS void system_init (void)
 {
-#if defined(SPLIT_LOADER_APP)
-    /* Loader already entered EL1 and configured the early platform state. */
-    __asm volatile (
-        "    LDR   r0, =__Vectors                 \n"
-        "    MCR   p15, #0, r0, c12, c0, #0       \n"
-        "    DSB                                  \n"
-        "    ISB                                  \n"
-        "    B     stack_init                     \n"
-        ::: "memory");
-#else
 #if 1 // Software loops are only needed when debugging.
     __asm volatile (
         "    mov   r0, #0                                   \n"
@@ -191,6 +181,7 @@ BSP_TARGET_ARM BSP_ATTRIBUTE_STACKLESS void system_init (void)
         "    bne   software_loop                            \n"
         ::: "memory");
 #endif
+
     __asm volatile (
         "set_hactlr:                              \n"
         "    MOVW  r0, %[bsp_hactlr_bit_l]        \n" /* Set HACTLR bits(L) */
@@ -237,7 +228,7 @@ BSP_TARGET_ARM BSP_ATTRIBUTE_STACKLESS void system_init (void)
         "    MSR   ELR_hyp, r1                    \n"
         "    ERET                                 \n" /* Branch to stack_init and enter EL1 */
         ::: "memory");
-    #endif
+
 }
 
 /** @} (end addtogroup BSP_MCU) */
