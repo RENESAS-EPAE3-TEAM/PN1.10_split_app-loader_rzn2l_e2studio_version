@@ -107,7 +107,7 @@
     <intAttribute key="org.eclipse.cdt.debug.gdbjtag.core.delay" value="1"/>
     <booleanAttribute key="org.eclipse.cdt.debug.gdbjtag.core.doHalt" value="false"/>
     <booleanAttribute key="org.eclipse.cdt.debug.gdbjtag.core.doReset" value="true"/>
-    <stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.imageFileName" value="C:\Users\a5144133\Desktop\git\274-safety-board-iface\gcc_project\rzn2l_xspi_boot\Debug_App5_FAILSAFE_PSD\rzn2l_xspi_boot_App5.elf"/>
+    <stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.imageFileName" value="C:\Users\Administrator\Desktop\Renesas_PROFINET_IRT_DEVKIT_V1.10.0\gcc_project\rzn2l_xspi_boot\Debug_App5_FAILSAFE_PSD\rzn2l_xspi_boot_App5.elf"/>
     <stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.imageOffset" value=""/>
     <stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.initCommands" value=""/>
     <booleanAttribute key="org.eclipse.cdt.debug.gdbjtag.core.loadImage" value="true"/>
@@ -118,7 +118,7 @@
     <booleanAttribute key="org.eclipse.cdt.debug.gdbjtag.core.setResume" value="false"/>
     <booleanAttribute key="org.eclipse.cdt.debug.gdbjtag.core.setStopAt" value="true"/>
     <stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.stopAt" value="main"/>
-    <stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.symbolsFileName" value="C:\Users\a5144133\Desktop\git\274-safety-board-iface\gcc_project\rzn2l_xspi_boot\Debug_App5_FAILSAFE_PSD\rzn2l_xspi_boot_App5.elf"/>
+    <stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.symbolsFileName" value="C:\Users\Administrator\Desktop\Renesas_PROFINET_IRT_DEVKIT_V1.10.0\gcc_project\rzn2l_xspi_boot\Debug_App5_FAILSAFE_PSD\rzn2l_xspi_boot_App5.elf"/>
     <stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.symbolsOffset" value=""/>
     <booleanAttribute key="org.eclipse.cdt.debug.gdbjtag.core.useFileForImage" value="false"/>
     <booleanAttribute key="org.eclipse.cdt.debug.gdbjtag.core.useFileForSymbols" value="false"/>

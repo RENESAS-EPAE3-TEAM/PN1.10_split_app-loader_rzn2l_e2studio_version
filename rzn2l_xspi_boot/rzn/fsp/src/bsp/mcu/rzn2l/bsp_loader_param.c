@@ -24,7 +24,7 @@
 #include "bsp_api.h"
 #include "split_loader_app.h"
 
-#if !(BSP_CFG_RAM_EXECUTION) && !defined(SPLIT_LOADER_APP)
+#if !(BSP_CFG_RAM_EXECUTION) && !SPLIT_LOADER_APP
 
 /***********************************************************************************************************************
  * Macro definitions

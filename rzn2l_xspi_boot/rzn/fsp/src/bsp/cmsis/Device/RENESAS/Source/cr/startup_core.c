@@ -170,7 +170,7 @@ void Default_Handler (void)
  **********************************************************************************************************************/
 BSP_TARGET_ARM BSP_ATTRIBUTE_STACKLESS void system_init (void)
 {
-#if defined(SPLIT_LOADER_APP)
+#if SPLIT_LOADER_APP
     /* Loader already entered EL1 and configured the early platform state. */
     __asm volatile (
         "    set_vbar:                 \n"

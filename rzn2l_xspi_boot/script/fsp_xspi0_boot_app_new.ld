@@ -48,11 +48,12 @@ CS3_SPACE_PRV_LENGTH = DEFINED(CS3_SPACE_LENGTH) ? CS3_SPACE_LENGTH : 0;
 CS5_SPACE_PRV_START = DEFINED(CS5_SPACE_START) ? CS5_SPACE_START : 0;
 CS5_SPACE_PRV_LENGTH = DEFINED(CS5_SPACE_LENGTH) ? CS5_SPACE_LENGTH : 0;
 
-LOADER_PARAM_ADDRESS       = xSPI0_CS0_SPACE_PRV_START;
-FLASH_CONTENTS_ADDRESS     = LOADER_PARAM_ADDRESS + 0x0000004C;
+/* The Boot ROM parameter block belongs to the separate Loader project. */
+APP_IMAGE_ADDRESS          = xSPI0_CS0_SPACE_PRV_START + 0x00100000;
+FLASH_CONTENTS_ADDRESS     = APP_IMAGE_ADDRESS + 0x00000060;
 LOADER_TEXT_ADDRESS        = 0x00102000;
 INTVEC_ADDRESS             = 0x00000000;
-TEXT_ADDRESS               = 0x00000100;
+TEXT_ADDRESS               = 0x10000100;
 NONCACHE_BUFFER_OFFSET     = 0x00020000;
 DMAC_LINK_MODE_OFFSET      = 0x00044000;
 DATA_NONCACHE_OFFSET       = 0x00048000;
@@ -60,6 +61,13 @@ RAM_START                  = ATCM_PRV_START;
 RAM_LENGTH                 = ATCM_PRV_LENGTH;
 LOADER_START               = BTCM_PRV_START;
 LOADER_LENGTH              = BTCM_PRV_LENGTH;
+
+SDRAM_NC_START             = DEFINED(USE_HRAM) ? 0x44500000 : 0x54500000;
+SDRAM_NC_LENGTH            = 0x201000;  
+HEAP_START                 = DEFINED(USE_HRAM) ? 0x44200000 : 0x55000000;
+HEAP_LENGTH                = 0x1fffff;  
+BSS_SPACE_START            = DEFINED(USE_HRAM) ? 0x64400100 : 0x74400100;
+BSS_SPACE_LENGTH           = 0x100000;  
 
 /* Define starting addresses and length for data_noncache, DMAC link mode data, CPU-shared non-cache, and CPU-specific non-cache areas. */
 DATA_NONCACHE_START = DEFINED(SYSTEM_RAM_MIRROR_START) ? SYSTEM_RAM_MIRROR_START + SYSTEM_RAM_MIRROR_LENGTH - DATA_NONCACHE_OFFSET : 0;
@@ -100,20 +108,32 @@ MEMORY
     DMAC_LINK_MODE : ORIGIN = DMAC_LINK_MODE_START, LENGTH = DMAC_LINK_MODE_LENGTH
     SHARED_NONCACHE_BUFFER : ORIGIN = SHARED_NONCACHE_BUFFER_START, LENGTH = SHARED_NONCACHE_BUFFER_LENGTH
     NONCACHE_BUFFER : ORIGIN = NONCACHE_BUFFER_START, LENGTH = NONCACHE_BUFFER_LENGTH
+	SDRAM_NC_SPACE : ORIGIN = SDRAM_NC_START, LENGTH = SDRAM_NC_LENGTH
+	HEAP_SPACE : ORIGIN = HEAP_START, LENGTH = HEAP_LENGTH
+	BSS_SPACE : ORIGIN = BSS_SPACE_START, LENGTH = BSS_SPACE_LENGTH
 }
 
 SECTIONS
 {
-    .loader_param LOADER_PARAM_ADDRESS : AT (LOADER_PARAM_ADDRESS)
+    /*
+    * Loader-readable manifest. Entries are vector, text, data, non-cache
+    * initialized data, and the BSS range to clear. Its layout is defined in
+    * the Loader project's loader_table.h.
+     */
+    .app_image_manifest APP_IMAGE_ADDRESS : AT (APP_IMAGE_ADDRESS)
     {
-        KEEP(*(.loader_param))
+        LONG(0x41505049); /* APP_IMAGE_MAGIC */
+        LONG(2);          /* APP_IMAGE_FORMAT_VERSION */
+        LONG(5);          /* table entry count */
+        LONG(_fvector_start);
+        LONG(_mfvector); LONG(_fvector_start); LONG(_fvector_end - _fvector_start); LONG(1);
+        LONG(_mtext); LONG(_text_start); LONG(_text_end - _text_start); LONG(1);
+        LONG(_mdata); LONG(_data_start); LONG(_data_end - _data_start); LONG(1);
+        LONG(_mdata_noncache); LONG(_data_noncache_start); LONG(_data_noncache_end - _data_noncache_start); LONG(1);
+        LONG(0); LONG(__bss_start__); LONG(__bss_end__ - __bss_start__); LONG(2);
     } > xSPI0_CS0_SPACE
     .flash_contents FLASH_CONTENTS_ADDRESS : AT (FLASH_CONTENTS_ADDRESS)
     {
-        _mloader_text = .;
-        . = . + (_loader_text_end - _loader_text_start);
-        _mloader_data = .;
-        . = . + (_loader_data_end - _loader_data_start);
         _mfvector = .;
         . = . + (_fvector_end - _fvector_start);
         _mtext = .;
@@ -126,54 +146,6 @@ SECTIONS
         . = . + (_data_noncache_end - _data_noncache_start);
         flash_contents_end = .;
     } > xSPI0_CS0_SPACE
-    .loader_text LOADER_TEXT_ADDRESS : AT (_mloader_text)
-    {
-        _loader_text_start = .;
-        *(.loader_text)
-        */fsp/src/bsp/cmsis/Device/RENESAS/Source/*.o(.text*)
-        */fsp/src/bsp/mcu/all/*/bsp_irq_core.o(.text*)
-        */fsp/src/bsp/mcu/all/bsp_clocks.o(.text*)
-        */fsp/src/bsp/mcu/all/bsp_irq.o(.text*)
-        */fsp/src/bsp/mcu/all/bsp_register_protection.o(.text*)
-        */fsp/src/bsp/mcu/all/bsp_cache.o(.text*)
-        */fsp/src/r_ioport/r_ioport.o(.text*)
-        KEEP(*(.warm_start))
-        . = . + (512 - ((. - _loader_text_start) % 512));
-        _loader_text_end = .;
-    } > LOADER_STACK
-    .loader_data : AT (_mloader_data)
-    {
-        _loader_data_start = .;
-        __loader_data_start = .;
-        */fsp/src/bsp/cmsis/Device/RENESAS/Source/*.o(.data*)
-        */fsp/src/bsp/cmsis/Device/RENESAS/Source/*/system_core.o(.rodata*)
-        */fsp/src/bsp/mcu/all/*/bsp_irq_core.o(.data*)
-        */fsp/src/bsp/mcu/all/bsp_clocks.o(.data*)
-        */fsp/src/bsp/mcu/all/bsp_irq.o(.data*)
-        */fsp/src/bsp/mcu/all/bsp_register_protection.o(.data*)
-        */fsp/src/bsp/mcu/all/bsp_cache.o(.data*)
-        */fsp/src/r_ioport/r_ioport.o(.data*)
-        . = ALIGN(4);
-        __loader_data_end = .;
-        __loader_bss_start = .;
-        */fsp/src/bsp/cmsis/Device/RENESAS/Source/*.o(.bss*)
-        */fsp/src/bsp/mcu/all/*/bsp_irq_core.o(.bss*)
-        */fsp/src/bsp/mcu/all/bsp_clocks.o(.bss*)
-        */fsp/src/bsp/mcu/all/bsp_irq.o(.bss*)
-        */fsp/src/bsp/mcu/all/bsp_register_protection.o(.bss*)
-        */fsp/src/bsp/mcu/all/bsp_cache.o(.bss*)
-        */fsp/src/r_ioport/r_ioport.o(.bss*)
-        */fsp/src/bsp/cmsis/Device/RENESAS/Source/*.o(COMMON)
-        */fsp/src/bsp/mcu/all/*/bsp_irq_core.o(COMMON)
-        */fsp/src/bsp/mcu/all/bsp_clocks.o(COMMON)
-        */fsp/src/bsp/mcu/all/bsp_irq.o(COMMON)
-        */fsp/src/bsp/mcu/all/bsp_register_protection.o(.COMMON)
-        */fsp/src/bsp/mcu/all/bsp_cache.o(COMMON)
-        */fsp/src/r_ioport/r_ioport.o(.COMMON)
-        . = ALIGN(4);
-        __loader_bss_end = . ;
-        _loader_data_end = .;
-    } > LOADER_STACK
     .intvec INTVEC_ADDRESS : AT (_mfvector)
     {
         _fvector_start = .;
@@ -183,6 +155,7 @@ SECTIONS
     .text TEXT_ADDRESS : AT (_mtext)
     {
         _text_start = .;
+        *(.loader_text)
         *(.text*)
 
         KEEP(*(.reset_handler))
@@ -206,22 +179,22 @@ SECTIONS
         _dtor_end = .;
 
         KEEP(*(.eh_frame*))
-    } > RAM
+    } > SYSTEM_RAM
     .rvectors :
     {
         _rvectors_start = .;
         KEEP(*(.rvectors))
         _rvectors_end = .;
-    } > RAM
+    } > SYSTEM_RAM
     .ARM.extab :
     {
         *(.ARM.extab* .gnu.linkonce.armextab.*)
-    } > RAM
+    } > SYSTEM_RAM
     __exidx_start = .;
     .ARM.exidx :
     {
         *(.ARM.exidx* .gnu.linkonce.armexidx.*)
-    } > RAM
+    } > SYSTEM_RAM
     __exidx_end = .;
     .got :
     {
@@ -229,7 +202,7 @@ SECTIONS
         *(.got.plt)
         . = ALIGN(4);
         _text_end = .;
-    } > RAM
+    } > SYSTEM_RAM
     .dummy _fvector_end : AT (_mdummy)
     {
         _dummy_start = .;
@@ -273,35 +246,7 @@ SECTIONS
 
         /* All data end */
         _data_end = .;
-    } > RAM
-    .bss :
-    {
-        . = ALIGN(4);
-        __bss_start__ = .;
-        _bss = .;
-        *(.bss*)
-        *(COMMON)
-        . = ALIGN(4);
-        __bss_end__ = .;
-        _ebss = .;
-        _end = .;
-    } > RAM
-    .heap (NOLOAD) :
-    {
-        . = ALIGN(8);
-        __HeapBase = .;
-        /* Place the STD heap here. */
-        KEEP(*(.heap))
-        __HeapLimit = .;
-    } > RAM
-    .thread_stack (NOLOAD):
-    {
-        . = ALIGN(8);
-        __ThreadStackBase = .;
-        /* Place the Thread stacks here. */
-        KEEP(*(.stack*))
-        __ThreadStackLimit = .;
-    } > RAM
+    } > SYSTEM_RAM
     .sys_stack (NOLOAD) :
     {
         . = ALIGN(8);
@@ -370,6 +315,7 @@ SECTIONS
         _sncbuffer_start = .;
         KEEP(*(.shared_noncache_buffer*))
         _sncbuffer_end = .;
+        KEEP(*(task_stack*))
     } > SHARED_NONCACHE_BUFFER
     .noncache_buffer NONCACHE_BUFFER_START (NOLOAD) : AT (NONCACHE_BUFFER_START)
     {
@@ -378,4 +324,45 @@ SECTIONS
         KEEP(*(.noncache_buffer*))
         _ncbuffer_end = .;
     } > NONCACHE_BUFFER
+    .sdram_nc SDRAM_NC_START : AT (SDRAM_NC_START)
+    {
+        . = ALIGN(32);
+        __sdnc_start__ = .;
+        KEEP(*(uncached_mem*))
+        KEEP(*(nocache*))
+        __sdnc_end__ = .;
+    } > SDRAM_NC_SPACE
+    .heap HEAP_START : AT (HEAP_START)
+    {
+        . = ALIGN(8);
+        __HeapBase = .;
+        /* Place the STD heap here. */
+        KEEP(*(.heap))
+        __HeapLimit = .;
+        
+        . = ALIGN(4);
+        __Heap4_start__ = .;
+        */rzn/aws/amazon-freertos/freertos_kernel/portable/MemMang/heap_4.o(.bss*)
+        __Heap4_end__ = .;
+    } > HEAP_SPACE
+    .bss BSS_SPACE_START :
+    {
+        . = ALIGN(4);
+        __bss_start__ = .;
+        _bss = .;
+        *(.bss*)
+        *(COMMON)
+        . = ALIGN(4);
+        __bss_end__ = .;
+        _ebss = .;
+        _end = .;
+    } > BSS_SPACE
+    .thread_stack (NOLOAD):
+    {
+        . = ALIGN(8);
+        __ThreadStackBase = .;
+        /* Place the Thread stacks here. */
+        KEEP(*(.stack*))
+        __ThreadStackLimit = .;
+    } > BSS_SPACE
 }

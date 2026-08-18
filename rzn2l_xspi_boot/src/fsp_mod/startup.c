@@ -47,7 +47,7 @@ extern void bsp_tfu_init(void);
 
 #endif
 
-#if BSP_CFG_C_RUNTIME_INIT && !defined(SPLIT_LOADER_APP)
+#if BSP_CFG_C_RUNTIME_INIT && !SPLIT_LOADER_APP
 extern void bsp_loader_data_init(void);
 extern void bsp_loader_bss_init(void);
 #endif
@@ -57,11 +57,11 @@ extern void bsp_static_constructor_init(void);
 
 #endif
 
-#if !(BSP_CFG_RAM_EXECUTION) && !defined(SPLIT_LOADER_APP)
+#if !(BSP_CFG_RAM_EXECUTION) && !SPLIT_LOADER_APP
 extern void bsp_copy_to_ram(void);
 #endif
 
-#if !(BSP_CFG_RAM_EXECUTION) && !defined(SPLIT_LOADER_APP)
+#if !(BSP_CFG_RAM_EXECUTION) && !SPLIT_LOADER_APP
 extern void bsp_application_bss_init(void);
 
 #endif
@@ -112,7 +112,7 @@ void SystemInit (void)
     /* Call post clock initialization hook. */
     R_BSP_WarmStart(BSP_WARM_START_POST_CLOCK);
 
-#if BSP_CFG_C_RUNTIME_INIT && !defined(SPLIT_LOADER_APP)
+#if BSP_CFG_C_RUNTIME_INIT && !SPLIT_LOADER_APP
 
     /* Copy the loader data from external Flash to internal RAM. */
     bsp_loader_data_init();
@@ -132,14 +132,14 @@ void SystemInit (void)
     /* Set memory attributes, etc. */
     bsp_memory_protect_setting();
 
-#if !(BSP_CFG_RAM_EXECUTION) && !defined(SPLIT_LOADER_APP)
+#if !(BSP_CFG_RAM_EXECUTION) && !SPLIT_LOADER_APP
 
     /* Copy the application program from external Flash to internal RAM. */
     bsp_copy_to_ram();
 
 #endif
 
-#if !(BSP_CFG_RAM_EXECUTION) && !defined(SPLIT_LOADER_APP)
+#if !(BSP_CFG_RAM_EXECUTION) && !SPLIT_LOADER_APP
 
     /* Clear bss section in internal RAM. */
     bsp_application_bss_init();

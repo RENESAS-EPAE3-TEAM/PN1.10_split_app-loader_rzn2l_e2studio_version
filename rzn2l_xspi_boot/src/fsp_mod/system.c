@@ -36,7 +36,7 @@
 #define BSP_PRV_MASTER_MPU_ENDADD(master, region)    (BSP_CFG_MPU ## master ## _ENDADD ## region)
 
 #if defined(__ICCARM__)
- #if BSP_CFG_C_RUNTIME_INIT && !defined(SPLIT_LOADER_APP)
+ #if BSP_CFG_C_RUNTIME_INIT && !SPLIT_LOADER_APP
   #define BSP_PRV_SECTION_LDR_DATA_ROM_ADDRESS                __section_begin("LDR_DATA_RBLOCK")
   #define BSP_PRV_SECTION_LDR_DATA_RAM_START                  __section_begin("LDR_DATA_WBLOCK")
   #define BSP_PRV_SECTION_LDR_DATA_RAM_END                    __section_end("LDR_DATA_WBLOCK")
@@ -81,7 +81,7 @@
  #endif
 
 #elif defined(__GNUC__)
- #if BSP_CFG_C_RUNTIME_INIT && !defined(SPLIT_LOADER_APP)
+ #if BSP_CFG_C_RUNTIME_INIT && !SPLIT_LOADER_APP
   #define BSP_PRV_SECTION_LDR_DATA_ROM_ADDRESS                &_mloader_data
   #define BSP_PRV_SECTION_LDR_DATA_RAM_START                  &__loader_data_start
   #define BSP_PRV_SECTION_LDR_DATA_RAM_END                    &__loader_data_end
@@ -365,7 +365,7 @@ void R_BSP_WarmStart(bsp_warm_start_event_t event) __attribute__((weak));
 
 #endif
 
-#if BSP_CFG_C_RUNTIME_INIT && !defined(SPLIT_LOADER_APP)
+#if BSP_CFG_C_RUNTIME_INIT && !SPLIT_LOADER_APP
 void bsp_loader_data_init(void);
 void bsp_loader_bss_init(void);
 void bsp_static_constructor_init(void);
@@ -498,7 +498,7 @@ void R_BSP_WarmStart (bsp_warm_start_event_t event)
 
 /** @} (end addtogroup BSP_MCU) */
 
-#if BSP_CFG_C_RUNTIME_INIT && !defined(SPLIT_LOADER_APP)
+#if BSP_CFG_C_RUNTIME_INIT && !SPLIT_LOADER_APP
 
 /*******************************************************************************************************************//**
  * Copy the loader data block from external Flash to internal RAM.
@@ -675,7 +675,7 @@ void bsp_bss_init_multibyte (volatile uintptr_t * src, volatile uintptr_t bytesi
 /*******************************************************************************************************************//**
  * Copy the application program block from external Flash to internal RAM.
  **********************************************************************************************************************/
-#if !defined(SPLIT_LOADER_APP)
+#if !SPLIT_LOADER_APP
 void bsp_copy_to_ram (void)
 {
     /* Define destination/source address pointer and block size */
