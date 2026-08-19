@@ -47,7 +47,7 @@ extern void bsp_tfu_init(void);
 
 #endif
 
-#if BSP_CFG_C_RUNTIME_INIT && !SPLIT_LOADER_APP
+#if BSP_CFG_C_RUNTIME_INIT
 extern void bsp_loader_data_init(void);
 extern void bsp_loader_bss_init(void);
 #endif
@@ -57,11 +57,11 @@ extern void bsp_static_constructor_init(void);
 
 #endif
 
-#if !(BSP_CFG_RAM_EXECUTION) && !SPLIT_LOADER_APP
+#if !(BSP_CFG_RAM_EXECUTION)
 extern void bsp_copy_to_ram(void);
 #endif
 
-#if !(BSP_CFG_RAM_EXECUTION) && !SPLIT_LOADER_APP
+#if !(BSP_CFG_RAM_EXECUTION)
 extern void bsp_application_bss_init(void);
 
 #endif

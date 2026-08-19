@@ -2,7 +2,7 @@
 #ifdef USE_HRAM
 #include "hram_sample.h"
 #endif
-
+#include "split_loader_app.h"
 FSP_CPP_HEADER
 void R_BSP_WarmStart(bsp_warm_start_event_t event)
 BSP_PLACE_IN_SECTION(".warm_start");
@@ -279,6 +279,7 @@ void R_BSP_WarmStart(bsp_warm_start_event_t event)
         /* Configure pins. */
         R_IOPORT_Open(&g_ioport_ctrl, &g_bsp_pin_cfg);
 		// Quad Enable
+        #if !SPLIT_LOADER_APP
 		{
 			R_XSPI_QSPI_Open(&g_qspi_ldr_ctrl, &g_qspi_ldr_cfg);
 			R_XSPI_QSPI_SpiProtocolSet(&g_qspi_ldr_ctrl, SPI_FLASH_PROTOCOL_1S_1S_1S);
@@ -292,6 +293,7 @@ void R_BSP_WarmStart(bsp_warm_start_event_t event)
 			}while((qspi_command[QSPI_CMD_READ_STATUS].data & 0x41) != 0x40);
 			R_XSPI_QSPI_SpiProtocolSet(&g_qspi_ldr_ctrl, SPI_FLASH_PROTOCOL_1S_4S_4S);
 		}
+        #endif
 	}
     if (BSP_WARM_START_POST_C == event)
     {

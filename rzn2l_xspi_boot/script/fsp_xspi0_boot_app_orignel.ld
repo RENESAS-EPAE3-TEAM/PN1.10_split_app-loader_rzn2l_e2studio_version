@@ -48,9 +48,8 @@ CS3_SPACE_PRV_LENGTH = DEFINED(CS3_SPACE_LENGTH) ? CS3_SPACE_LENGTH : 0;
 CS5_SPACE_PRV_START = DEFINED(CS5_SPACE_START) ? CS5_SPACE_START : 0;
 CS5_SPACE_PRV_LENGTH = DEFINED(CS5_SPACE_LENGTH) ? CS5_SPACE_LENGTH : 0;
 
-/* The Boot ROM parameter block belongs to the separate Loader project. */
-APP_IMAGE_ADDRESS          = xSPI0_CS0_SPACE_PRV_START + 0x00100000;
-FLASH_CONTENTS_ADDRESS     = APP_IMAGE_ADDRESS + 0x00000060;
+LOADER_PARAM_ADDRESS       = xSPI0_CS0_SPACE_PRV_START;
+FLASH_CONTENTS_ADDRESS     = LOADER_PARAM_ADDRESS + 0x0000004C;
 LOADER_TEXT_ADDRESS        = 0x00102000;
 INTVEC_ADDRESS             = 0x00000000;
 TEXT_ADDRESS               = 0x10000100;
@@ -115,25 +114,16 @@ MEMORY
 
 SECTIONS
 {
-    /*
-    * Loader-readable manifest. Entries are vector, text, data, non-cache
-    * initialized data, and the BSS range to clear. Its layout is defined in
-    * the Loader project's loader_table.h.
-     */
-    .app_image_manifest APP_IMAGE_ADDRESS : AT (APP_IMAGE_ADDRESS)
+    .loader_param LOADER_PARAM_ADDRESS : AT (LOADER_PARAM_ADDRESS)
     {
-        LONG(0x41505049); /* APP_IMAGE_MAGIC */
-        LONG(2);          /* APP_IMAGE_FORMAT_VERSION */
-        LONG(5);          /* table entry count */
-        LONG(_fvector_start);
-        LONG(_mfvector); LONG(_fvector_start); LONG(_fvector_end - _fvector_start); LONG(1);
-        LONG(_mtext); LONG(_text_start); LONG(_text_end - _text_start); LONG(1);
-        LONG(_mdata); LONG(_data_start); LONG(_data_end - _data_start); LONG(1);
-        LONG(_mdata_noncache); LONG(_data_noncache_start); LONG(_data_noncache_end - _data_noncache_start); LONG(1);
-        LONG(0); LONG(__bss_start__); LONG(__bss_end__ - __bss_start__); LONG(2);
+        KEEP(*(.loader_param))
     } > xSPI0_CS0_SPACE
     .flash_contents FLASH_CONTENTS_ADDRESS : AT (FLASH_CONTENTS_ADDRESS)
     {
+        _mloader_text = .;
+        . = . + (_loader_text_end - _loader_text_start);
+        _mloader_data = .;
+        . = . + (_loader_data_end - _loader_data_start);
         _mfvector = .;
         . = . + (_fvector_end - _fvector_start);
         _mtext = .;
@@ -146,6 +136,70 @@ SECTIONS
         . = . + (_data_noncache_end - _data_noncache_start);
         flash_contents_end = .;
     } > xSPI0_CS0_SPACE
+    .loader_text LOADER_TEXT_ADDRESS : AT (_mloader_text)
+    {
+        _loader_text_start = .;
+        *(.loader_text)
+        */fsp/src/bsp/cmsis/Device/RENESAS/Source/*.o(.text*)
+        */startup.o(.text*)
+        */system.o(.text*)
+        */bsp_*.o(.text*)
+        *lib*.a:*(.text*)
+        */fsp/src/r_ioport/r_ioport.o(.text*)
+        */r_xspi_qspi.o(.text*)
+        KEEP(*(.warm_start))
+        . = . + (512 - ((. - _loader_text_start) % 512));
+        _loader_text_end = .;
+    } > LOADER_STACK
+    .loader_data : AT (_mloader_data)
+    {
+        _loader_data_start = .;
+        __loader_data_start = .;
+        */fsp/src/bsp/cmsis/Device/RENESAS/Source/*.o(.data*)
+        */fsp/src/bsp/cmsis/Device/RENESAS/Source/*/system_core.o(.rodata*)
+        */startup.o(.data*)
+        */system.o(.data*)
+        */startup.o(.rodata*)
+        */system.o(.rodata*)
+        */bsp_*.o(.data*)
+        */fsp/src/r_ioport/r_ioport.o(.data*)
+        */hal_entry.o(.rodata*)
+        */hal_entry.o(.data*)
+        */pin_data.o(.rodata*)
+        */pin_data.o(.data*)
+        */common_data.o(.rodata*)
+        */common_data.o(.data*)
+        */hal_data.o(.rodata*)
+        */hal_data.o(.data*)
+        */r_xspi_qspi.o(.rodata*)
+        */r_xspi_qspi.o(.data*)
+        . = ALIGN(4);
+        __loader_data_end = .;
+        __loader_bss_start = .;
+        */fsp/src/bsp/cmsis/Device/RENESAS/Source/*.o(.bss*)
+        */startup.o(.bss*)
+        */system.o(.bss*)
+        */bsp_*.o(.bss*)
+        */fsp/src/r_ioport/r_ioport.o(.bss*)
+        */hal_entry.o(.bss*)
+        */pin_data.o(.bss*)
+        */common_data.o(.bss*)
+        */hal_data.o(.bss*)
+        */r_xspi_qspi.o(.bss*)
+        */fsp/src/bsp/cmsis/Device/RENESAS/Source/*.o(COMMON)
+        */startup.o(.bss*)
+        */system.o(.bss*)
+        */bsp_*.o(COMMON)
+        */fsp/src/r_ioport/r_ioport.o(.COMMON)
+        */hal_entry.o(.COMMON)
+        */pin_data.o(.COMMON)
+        */common_data.o(.COMMON)
+        */hal_data.o(.COMMON)
+        */r_xspi_qspi.o(.COMMON)
+        . = ALIGN(4);
+        __loader_bss_end = . ;
+        _loader_data_end = .;
+    } > LOADER_STACK
     .intvec INTVEC_ADDRESS : AT (_mfvector)
     {
         _fvector_start = .;
@@ -155,7 +209,6 @@ SECTIONS
     .text TEXT_ADDRESS : AT (_mtext)
     {
         _text_start = .;
-        *(.loader_text)
         *(.text*)
 
         KEEP(*(.reset_handler))
