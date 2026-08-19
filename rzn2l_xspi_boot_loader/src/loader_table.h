@@ -2,8 +2,8 @@
 
 /* The image manifest is emitted by every split App linker script. */
 #define APP_IMAGE_MAGIC                  (0x41505049UL) /* "APPI" */
-#define APP_IMAGE_FORMAT_VERSION         (2UL)
-#define TABLE_ENTRY_NUM                  (5U)
+#define APP_IMAGE_FORMAT_VERSION         (3UL)
+#define TABLE_ENTRY_NUM                  (8U)
 #define TABLE_ENABLE                     (1U)
 #define TABLE_CLEAR                      (2U)
 #define TABLE_DISABLE                    (0U)

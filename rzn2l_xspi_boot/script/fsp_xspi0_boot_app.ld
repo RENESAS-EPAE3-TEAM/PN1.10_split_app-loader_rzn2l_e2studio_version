@@ -50,8 +50,10 @@ CS5_SPACE_PRV_LENGTH = DEFINED(CS5_SPACE_LENGTH) ? CS5_SPACE_LENGTH : 0;
 
 /* The Boot ROM parameter block belongs to the separate Loader project. */
 APP_IMAGE_ADDRESS          = xSPI0_CS0_SPACE_PRV_START + 0x00100000;
-FLASH_CONTENTS_ADDRESS     = APP_IMAGE_ADDRESS + 0x00000060;
-LOADER_TEXT_ADDRESS        = 0x00102000;
+APP_IMAGE_MANIFEST_SIZE    = 0x00000090;
+FLASH_CONTENTS_ADDRESS     = APP_IMAGE_ADDRESS + APP_IMAGE_MANIFEST_SIZE;
+APP_LOADER_START           = 0x00108000;
+APP_LOADER_END             = 0x00120000;
 INTVEC_ADDRESS             = 0x00000000;
 TEXT_ADDRESS               = 0x10000100;
 NONCACHE_BUFFER_OFFSET     = 0x00020000;
@@ -59,8 +61,8 @@ DMAC_LINK_MODE_OFFSET      = 0x00044000;
 DATA_NONCACHE_OFFSET       = 0x00048000;
 RAM_START                  = ATCM_PRV_START;
 RAM_LENGTH                 = ATCM_PRV_LENGTH;
-LOADER_START               = BTCM_PRV_START;
-LOADER_LENGTH              = BTCM_PRV_LENGTH;
+LOADER_START               = APP_LOADER_START;
+LOADER_LENGTH              = APP_LOADER_END - APP_LOADER_START;
 
 SDRAM_NC_START             = DEFINED(USE_HRAM) ? 0x44500000 : 0x54500000;
 SDRAM_NC_LENGTH            = 0x201000;  
@@ -116,16 +118,20 @@ MEMORY
 SECTIONS
 {
     /*
-    * Loader-readable manifest. Entries are vector, text, data, non-cache
-    * initialized data, and the BSS range to clear. Its layout is defined in
-    * the Loader project's loader_table.h.
+    * Loader-readable manifest. The first three entries establish the App's
+    * BTCM early-runtime domain; the remaining entries establish the normal
+    * App runtime image. Its layout is defined in the Loader project's
+    * loader_table.h.
      */
     .app_image_manifest APP_IMAGE_ADDRESS : AT (APP_IMAGE_ADDRESS)
     {
         LONG(0x41505049); /* APP_IMAGE_MAGIC */
-        LONG(2);          /* APP_IMAGE_FORMAT_VERSION */
-        LONG(5);          /* table entry count */
+        LONG(3);          /* APP_IMAGE_FORMAT_VERSION */
+        LONG(8);          /* table entry count */
         LONG(_fvector_start);
+        LONG(_mapp_loader_text); LONG(_app_loader_text_start); LONG(_app_loader_text_end - _app_loader_text_start); LONG(1);
+        LONG(_mapp_loader_data); LONG(_app_loader_data_start); LONG(_app_loader_data_end - _app_loader_data_start); LONG(1);
+        LONG(0); LONG(__app_loader_bss_start); LONG(__app_loader_bss_end - __app_loader_bss_start); LONG(2);
         LONG(_mfvector); LONG(_fvector_start); LONG(_fvector_end - _fvector_start); LONG(1);
         LONG(_mtext); LONG(_text_start); LONG(_text_end - _text_start); LONG(1);
         LONG(_mdata); LONG(_data_start); LONG(_data_end - _data_start); LONG(1);
@@ -134,6 +140,10 @@ SECTIONS
     } > xSPI0_CS0_SPACE
     .flash_contents FLASH_CONTENTS_ADDRESS : AT (FLASH_CONTENTS_ADDRESS)
     {
+        _mapp_loader_text = .;
+        . = . + (_app_loader_text_end - _app_loader_text_start);
+        _mapp_loader_data = .;
+        . = . + (_app_loader_data_end - _app_loader_data_start);
         _mfvector = .;
         . = . + (_fvector_end - _fvector_start);
         _mtext = .;
@@ -146,6 +156,72 @@ SECTIONS
         . = . + (_data_noncache_end - _data_noncache_start);
         flash_contents_end = .;
     } > xSPI0_CS0_SPACE
+    .app_loader_text APP_LOADER_START : AT (_mapp_loader_text)
+    {
+        _app_loader_text_start = .;
+        *(.loader_text)
+        KEEP(*(.reset_handler))
+        */fsp/src/bsp/cmsis/Device/RENESAS/Source/*.o(.text*)
+        */startup.o(.text*)
+        */system.o(.text*)
+        */bsp_*.o(.text*)
+        *lib*.a:*(.text*)
+        */fsp/src/r_ioport/r_ioport.o(.text*)
+        */r_xspi_qspi.o(.text*)
+        KEEP(*(.warm_start))
+        . = ALIGN(512);
+        _app_loader_text_end = .;
+    } > LOADER_STACK
+    .app_loader_data : AT (_mapp_loader_data)
+    {
+        _app_loader_data_start = .;
+        */fsp/src/bsp/cmsis/Device/RENESAS/Source/*.o(.data*)
+        */fsp/src/bsp/cmsis/Device/RENESAS/Source/*/system_core.o(.rodata*)
+        */startup.o(.data*)
+        */system.o(.data*)
+        */startup.o(.rodata*)
+        */system.o(.rodata*)
+        */bsp_*.o(.data*)
+        */fsp/src/r_ioport/r_ioport.o(.data*)
+        */hal_entry.o(.rodata*)
+        */hal_entry.o(.data*)
+        */pin_data.o(.rodata*)
+        */pin_data.o(.data*)
+        */common_data.o(.rodata*)
+        */common_data.o(.data*)
+        */hal_data.o(.rodata*)
+        */hal_data.o(.data*)
+        */r_xspi_qspi.o(.rodata*)
+        */r_xspi_qspi.o(.data*)
+        . = ALIGN(4);
+        _app_loader_data_end = .;
+    } > LOADER_STACK
+    .app_loader_bss (NOLOAD) :
+    {
+        __app_loader_bss_start = .;
+        */fsp/src/bsp/cmsis/Device/RENESAS/Source/*.o(.bss*)
+        */startup.o(.bss*)
+        */system.o(.bss*)
+        */bsp_*.o(.bss*)
+        */fsp/src/r_ioport/r_ioport.o(.bss*)
+        */hal_entry.o(.bss*)
+        */pin_data.o(.bss*)
+        */common_data.o(.bss*)
+        */hal_data.o(.bss*)
+        */r_xspi_qspi.o(.bss*)
+        */fsp/src/bsp/cmsis/Device/RENESAS/Source/*.o(COMMON)
+        */startup.o(COMMON)
+        */system.o(COMMON)
+        */bsp_*.o(COMMON)
+        */fsp/src/r_ioport/r_ioport.o(COMMON)
+        */hal_entry.o(COMMON)
+        */pin_data.o(COMMON)
+        */common_data.o(COMMON)
+        */hal_data.o(COMMON)
+        */r_xspi_qspi.o(COMMON)
+        . = ALIGN(4);
+        __app_loader_bss_end = .;
+    } > LOADER_STACK
     .intvec INTVEC_ADDRESS : AT (_mfvector)
     {
         _fvector_start = .;
@@ -155,10 +231,8 @@ SECTIONS
     .text TEXT_ADDRESS : AT (_mtext)
     {
         _text_start = .;
-        *(.loader_text)
         *(.text*)
 
-        KEEP(*(.reset_handler))
         KEEP(*(.init))
         KEEP(*(.fini))
 
@@ -295,6 +369,7 @@ SECTIONS
         KEEP(*(.abt_stack))
         __AbtStackLimit = .;
     } > LOADER_STACK
+    ASSERT(. <= APP_LOADER_END, "App BTCM early-runtime domain exceeds 96 KiB")
     .data_noncache DATA_NONCACHE_START : AT (_mdata_noncache)
     {
         . = ALIGN(4);

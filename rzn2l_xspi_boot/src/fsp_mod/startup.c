@@ -124,6 +124,8 @@ void SystemInit (void)
     /* Initialize SystemCoreClock variable. */
     SystemCoreClockUpdate();
 
+    R_BSP_WarmStart(BSP_WARM_START_POST_C);
+
 #if BSP_CFG_C_RUNTIME_INIT
     /* Call Runtime initialization hook */
     R_BSP_WarmStart(BSP_WARM_START_POST_LOADER);
@@ -159,7 +161,7 @@ void SystemInit (void)
 #endif
 
     /* Call Post C runtime initialization hook. */
-    R_BSP_WarmStart(BSP_WARM_START_POST_C);
+//    R_BSP_WarmStart(BSP_WARM_START_POST_C);
 
     /* Initialize the Master-MPU settings. */
     bsp_master_mpu_init();

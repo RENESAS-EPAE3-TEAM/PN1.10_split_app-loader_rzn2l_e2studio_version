@@ -84,7 +84,7 @@ void hal_entry(void)
     R_BSP_PinAccessDisable();
 
     /* Delay */
-    R_BSP_SoftwareDelay(1000, BSP_DELAY_UNITS_MILLISECONDS);
+    R_BSP_SoftwareDelay(10, BSP_DELAY_UNITS_MILLISECONDS);
 
     //__asm volatile("cpsie if" ::: "memory");
 

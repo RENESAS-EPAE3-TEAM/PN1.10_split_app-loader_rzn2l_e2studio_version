@@ -303,14 +303,15 @@ void R_BSP_WarmStart(bsp_warm_start_event_t event)
         /* Configure pins. */
         R_IOPORT_Open(&g_ioport_ctrl, &g_bsp_pin_cfg);
 #endif
-#ifdef USE_HRAM
-        /* Setup HyperRAM */
-        hram_init();
-#else
-        /* Setup SDRAM */
-        bsp_sdram_init();
+#if !SPLIT_LOADER_APP
+    #ifdef USE_HRAM
+            /* Setup HyperRAM */
+            hram_init();
+    #else
+            /* Setup SDRAM */
+            bsp_sdram_init();
+    #endif
 #endif
-
 
 #if __ICCARM__
         __iar_data_init3();

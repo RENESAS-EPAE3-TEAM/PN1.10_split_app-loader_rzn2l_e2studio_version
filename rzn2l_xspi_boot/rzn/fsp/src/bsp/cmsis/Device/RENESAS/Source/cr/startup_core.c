@@ -176,12 +176,9 @@ BSP_TARGET_ARM BSP_ATTRIBUTE_STACKLESS void system_init (void)
         "    set_vbar:                 \n"
         "    LDR r0, =__Vectors        \n"
         "    MCR p15, #0, r0, c12, c0, #0     \n" /* Write r0 to VBAR */
-        ::: "memory");
-
-    __asm volatile (
-        "jump_stack_init:               \n"
-        "    LDR r0, =stack_init        \n"
-        "    BLX r0                     \n"
+        "    DSB                        \n"
+        "    ISB                        \n"
+        "    B stack_init               \n"
         ::: "memory");
 
 #else

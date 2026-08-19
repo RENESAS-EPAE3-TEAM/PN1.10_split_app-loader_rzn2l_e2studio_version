@@ -16,6 +16,13 @@ arm-none-eabi-objcopy -O binary ^
     --remove-section=.sdram_nc ^
     --remove-section=.heap ^
     --remove-section=.bss ^
+    --remove-section=.app_loader_bss ^
+    --remove-section=.sys_stack ^
+    --remove-section=.svc_stack ^
+    --remove-section=.irq_stack ^
+    --remove-section=.fiq_stack ^
+    --remove-section=.und_stack ^
+    --remove-section=.abt_stack ^
     --remove-section=.thread_stack ^
     --remove-section=.dmac_link_mode ^
     --remove-section=.shared_noncache_buffer ^
