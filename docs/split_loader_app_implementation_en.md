@@ -21,6 +21,31 @@ The final design remains compatible with FSP 2.0.0 and GCC 12.2.1 while providin
 
 The Boot ROM Loader parameter starts at `0x60000000`; Loader payload starts at `0x6000004C`.
 
+### 2.1 Hardware and Software Environment
+
+The following table records the environment baseline for this split design. Confirm these conditions first when rebuilding, importing the projects, or diagnosing startup issues.
+
+| Category | Item | Environment / Configuration | Notes |
+|---|---|---|---|
+| Hardware | SoC | Renesas RZ/N2L, `R9A07G084M04GBG` | Target device in the App `configuration.xml`. |
+| Hardware | Board configuration | RZ/N2L RSK, `xspi0_x1_boot` | FSP board: `board.rzn2lrsk.xspi0_x1`. |
+| Hardware | Boot storage | External Flash on xSPI0 CS0 | Used by the Boot ROM, Loader, and embedded App image startup path. |
+| Hardware | External runtime memory | SDRAM or HyperRAM | The Loader must initialize the memory fitted to the hardware; normal App data and BSS can reside there. |
+| Software | IDE / configuration generation | Renesas e² studio 2401.1 + FSP `2.0.0` | `configuration.xml` manages board, pin, driver, and generated-code settings. |
+| Software | Industrial Ethernet protocol stack | Renesas PN SDK `1.10.0` | This project is based on the `Renesas_PROFINET_IRT_DEVKIT_V1.10.0` release package; protocol-stack and App business sources are in the parent `profinet_sdk` directory. |
+
+Keep the following directory relationship so that the App can resolve the Profinet SDK include paths, linked resources, and source files:
+
+```text
+<project root>/
+├─ gcc_project/
+│  ├─ rzn2l_xspi_boot/
+│  └─ rzn2l_xspi_boot_loader/
+└─ profinet_sdk/
+```
+
+The App accesses Renesas PN SDK `1.10.0` through `${ProjDirPath}/../../profinet_sdk`. The PN SDK is an App build-time and runtime dependency; the Loader must not link its protocol stack or business code. When the board, Flash type, external-RAM type, clocks, pins, PN SDK, or FSP/GCC version changes, review the Loader and App configuration and startup sequence together; do not update only the App-side configuration.
+
 ## 3. Original Fused Design
 
 The original fused App linker script placed the following in one startup image:
@@ -293,9 +318,9 @@ The Loader FSP settings identify `script/fsp_xspi0_boot.ld` as the default linke
 
 Before regenerating Loader FSP content, back up that linker script. The safer long-term approach is to rename it to a custom linker script and explicitly select it with `-T` in the Loader `.cproject`, allowing FSP to overwrite only its default script.
 
-## 14. Parent-Level `profinet_sdk` Dependency
+## 14. Renesas PN SDK `1.10.0` Parent-Level `profinet_sdk` Dependency
 
-The App project is not self-contained. Its [`.cproject`](../rzn2l_xspi_boot/.cproject) contains relative paths to a Profinet SDK located next to the `gcc_project` directory:
+The App project is not self-contained. This implementation record applies to the `Renesas_PROFINET_IRT_DEVKIT_V1.10.0` release package, which contains Renesas PN SDK `1.10.0`. Its [`.cproject`](../rzn2l_xspi_boot/.cproject) contains relative paths to a Profinet SDK located next to the `gcc_project` directory:
 
 ```text
 <project root>/
