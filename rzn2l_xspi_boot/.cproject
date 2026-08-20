@@ -279,7 +279,10 @@
 							</tool>
 							<tool id="com.renesas.cdt.managedbuild.gcc.rz.tool.archiver.2023018865" name="Cross ARM GNU Archiver" superClass="com.renesas.cdt.managedbuild.gcc.rz.tool.archiver"/>
 							<tool id="com.renesas.cdt.managedbuild.gcc.rz.tool.flash.251449425" name="Cross ARM GNU Create Flash Image" superClass="com.renesas.cdt.managedbuild.gcc.rz.tool.flash">
-								<option id="com.renesas.cdt.managedbuild.gcc.rz.option.flash.choice.64269524" name="Output file format (-O)" superClass="com.renesas.cdt.managedbuild.gcc.rz.option.flash.choice" useByScannerDiscovery="false" value="ilg.gnuarmeclipse.managedbuild.cross.option.createflash.choice.srec" valueType="enumerated"/>
+								<option id="com.renesas.cdt.managedbuild.gcc.rz.option.flash.choice.64269524" name="Output file format (-O)" superClass="com.renesas.cdt.managedbuild.gcc.rz.option.flash.choice" useByScannerDiscovery="false" value="ilg.gnuarmeclipse.managedbuild.cross.option.createflash.choice.binary" valueType="enumerated"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.renesas.cdt.managedbuild.gcc.rz.option.flash.other.1763559209" name="Other flags" superClass="com.renesas.cdt.managedbuild.gcc.rz.option.flash.other" valueType="stringList">
+									<listOptionValue builtIn="false" value="--gap-fill 0xff"/>
+								</option>
 							</tool>
 							<tool id="com.renesas.cdt.managedbuild.gcc.rz.tool.listing.1172186936" name="Cross ARM GNU Create Listing" superClass="com.renesas.cdt.managedbuild.gcc.rz.tool.listing">
 								<option id="ilg.gnuarmeclipse.managedbuild.cross.option.createlisting.source.94274741" name="Display source (--source|-S)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.createlisting.source" value="true" valueType="boolean"/>
@@ -5272,6 +5275,8 @@
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
 	<storageModule moduleId="refreshScope" versionNumber="2">
+		<configuration configurationName="Debug_App44_PROFIdrive_hram"/>
+		<configuration configurationName="Debug_App44_PROFIdrive"/>
 		<configuration configurationName="Debug_App5_FAILSAFE_PSD"/>
 		<configuration configurationName="Debug_App1_STANDARD">
 			<resource resourceType="PROJECT" workspacePath="/rzn2l_xspi_boot"/>
@@ -5283,4 +5288,5 @@
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
 	<storageModule moduleId="scannerConfiguration"/>
+	<storageModule moduleId="org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings"/>
 </cproject>
