@@ -25,6 +25,32 @@ The original fused rzn2l_xspi_boot project was split into two independently buil
 
 Boot ROM Loader 参数从 `0x60000000` 开始，Loader payload 从 `0x6000004C` 开始。
 
+### 2.1 软硬件环境
+
+下表记录本次拆分方案对应的环境基线。重新构建、导入工程或定位启动问题时，应首先确认这些条件一致。
+
+| 类别 | 项目 | 环境 / 配置 | 说明 |
+|---|---|---|---|
+| 硬件 | SoC | Renesas RZ/N2L，`R9A07G084M04GBG` | App 的 `configuration.xml` 目标器件。 |
+| 硬件 | 开发板配置 | RZ/N2L RSK，`xspi0_x1_boot` | FSP board 为 `board.rzn2lrsk.xspi0_x1`。 |
+| 硬件 | 启动存储 | xSPI0 CS0 外接 Flash | Boot ROM、Loader 和嵌入式 App 镜像使用该启动路径。 |
+| 硬件 | 外部运行内存 | SDRAM 或 HyperRAM | Loader 必须按实际硬件初始化；App 的普通数据和 BSS 可能位于该内存。 |
+| 软件 | IDE / 配置生成 | Renesas e² studio 2401.1 + FSP `2.0.0` | 通过 `configuration.xml` 管理板级、引脚、驱动和生成代码。 |
+| 软件 | 工业以太网协议栈 | Renesas PN SDK `1.10.0` | 本工程基于 `Renesas_PROFINET_IRT_DEVKIT_V1.10.0` 发布包；协议栈和 App 业务源码位于上级 `profinet_sdk` 目录。 |
+
+工程目录应保持以下相对关系，以保证 App 能解析 Profinet SDK 的 include、linked resource 和源文件路径：
+
+```text
+<项目根目录>/
+├─ gcc_project/
+│  ├─ rzn2l_xspi_boot/
+│  └─ rzn2l_xspi_boot_loader/
+└─ profinet_sdk/
+```
+
+其中 App 工程访问 Renesas PN SDK `1.10.0` 的基准路径为 `${ProjDirPath}/../../profinet_sdk`。PN SDK 是 App 的构建时和运行期依赖，Loader 不应链接其协议栈或业务代码。若板卡、Flash 型号、外部 RAM 类型、时钟、引脚、PN SDK 或 FSP/GCC 版本发生变化，应同时复核 Loader 和 App 的配置以及启动时序；不能只更新 App 侧配置。
+
+
 ## 3. 拆分前的原始融合设计
 
 原始融合 App 链接脚本将以下内容一起放入一个启动镜像：
